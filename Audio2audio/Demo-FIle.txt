@@ -1,0 +1,93 @@
+I looked through your `AddBus.jsx` code carefully 👍
+
+The structure is fine, but I can already spot why you’re getting the **500 Internal Server Error** at:
+
+```
+GET http://localhost:3000/buses/verify 500 (Internal Server Error)
+```
+
+Here’s a breakdown:
+
+---
+
+### 🔎 Possible Causes
+
+1. **Backend Route Issue**
+
+   * The frontend is calling `http://localhost:3000/buses/verify`.
+   * Do you actually have this route defined in your backend?
+     Example in Express:
+
+     ```js
+     app.get("/buses/verify", (req, res) => {
+       // Example check
+       if (req.session && req.session.isAdmin) {
+         res.json({ success: true });
+       } else {
+         res.json({ success: false });
+       }
+     });
+     ```
+   * If the backend does not handle `/buses/verify`, you’ll get a 500.
+
+---
+
+2. **Credentials / Cookies**
+
+   * You are using:
+
+     ```js
+     credentials: "include"
+     ```
+
+     This means the browser will send cookies.
+     If your backend doesn’t handle CORS correctly with credentials, you’ll get a 500.
+
+     In Express, you must configure:
+
+     ```js
+     app.use(cors({
+       origin: "http://localhost:5173", // or React dev server port
+       credentials: true
+     }));
+     ```
+
+---
+
+3. **Backend Error on Verification**
+
+   * If your backend checks for a JWT, session, or cookie but fails to parse it → it throws an error → 500.
+   * Look at the backend logs when the request happens. That’ll tell you exactly why.
+
+---
+
+4. **Wrong URL or Port**
+
+   * If your backend is running on a different port (e.g., `5000`), but your fetch is pointing to `3000`, that will fail.
+
+---
+
+### ✅ Quick Fix Steps
+
+1. **Check Backend Route**
+
+   * Make sure `GET /buses/verify` exists and doesn’t crash.
+
+2. **Check Backend Logs**
+
+   * When you hit the endpoint, look at the backend terminal logs. That will give you the error reason.
+
+3. **Test in Browser/Postman**
+
+   * Open `http://localhost:3000/buses/verify` in browser or Postman.
+   * Do you get valid JSON, or a 500?
+
+4. **CORS Settings**
+
+   * If you’re using `credentials: "include"`, confirm backend allows cookies with CORS.
+
+---
+
+👉 If you share your backend code for `/buses/verify`, I can pinpoint the exact fix (probably something small like missing CORS setup or session check).
+
+Do you want to paste your backend route for `/buses/verify` here so I can debug it?
